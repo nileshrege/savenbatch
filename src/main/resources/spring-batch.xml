@@ -76,5 +76,13 @@
         <property name="bucketName" value="${aws.bucket.name}"/>
     </bean>
 
+<bean id="ftpClient" class="com.saven.dailyalert.batch.FtpFilesDownloader">
+    <property name="serverAddress" value="${ftp.server.address}"/>
+    <property name="userId" value="${ftp.user.id}"/>
+    <property name="password" value="${ftp.user.password}"/>
+    <property name="remoteDirectory" value="${ftp.remote.dir}"/>
+    <property name="localDirectory" value="${ftp.local.dir}"/>
+    <property name="deleteFileAfterRead" value="${ftp.delete.files.after.read}"/>
+</bean>
 
 </beans>
