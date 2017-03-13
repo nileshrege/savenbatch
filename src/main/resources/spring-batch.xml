@@ -1,0 +1,80 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/batch
+        http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+    <import resource="formula-columns.xml"/>
+    <import resource="chart-details.xml"/>
+
+    <job id="readFileJob"
+         xmlns="http://www.springframework.org/schema/batch">
+        <step id="readFile">
+            <tasklet>
+                <chunk commit-interval="${row.commit.size}"
+                       reader="multiResourceReader"
+                       writer="chartWriter"
+                />
+            </tasklet>
+        </step>
+        <listeners>
+            <listener ref="jobCompletionNotificationListener"/>
+        </listeners>
+    </job>
+
+    <bean id="jobCompletionNotificationListener"
+          class="com.saven.dailyalert.batch.JobCompletionNotificationListener">
+        <property name="fileUploader" ref="awsUploader"/>
+        <property name="folderName" value="${aws.upload.from.folder.name}"/>
+        <property name="prefix" value="${aws.file.prefix}"/>
+        <property name="extension" value="${aws.file.extension}"/>
+        <property name="skipUpload" value="${aws.file.skip.upload}"/>
+    </bean>
+
+    <bean id="chartWriter" class="com.saven.dailyalert.batch.LineChartWriter">
+        <property name="seriesConfigMap" ref="seriesConfigMap"/>
+        <property name="chartSaveAs" value="${chart.save.as}"/>
+        <property name="label" value="${chart.label}"/>
+        <property name="height" value="${chart.height}"/>
+        <property name="width" value="${chart.width}"/>
+        <property name="domain" value="${chart.domain.label}"/>
+        <property name="range" value="${chart.range.label}"/>
+    </bean>
+
+    <bean id="multiResourceReader" class=" org.springframework.batch.item.file.MultiResourceItemReader">
+        <property name="resources" value="${file.resources}" />
+        <property name="delegate" >
+            <bean class="org.springframework.batch.item.file.FlatFileItemReader">
+                <property name="recordSeparatorPolicy"
+                          ref="productRecordSeparatorPolicy"/>
+                <property name="lineMapper" ref="lineMapper"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="productRecordSeparatorPolicy"
+          class="org.springframework.batch.item.file.separator.DefaultRecordSeparatorPolicy"/>
+
+    <bean id="lineMapper" class="com.saven.dailyalert.batch.CSVLineMapper" >
+        <property name="lineTokenizer">
+            <bean class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer"/>
+        </property>
+
+        <property name="fieldSetMapper" ref="fieldSetMapper"/>
+    </bean>
+
+    <bean id="fieldSetMapper" class="com.saven.dailyalert.batch.FieldsSetMapper">
+        <property name="printRow" value="false"/>
+        <property name="rowIdColumn" value="${row.id.column}"/>
+        <property name="applicableFormulasList" ref="applicableFormulasList"/>
+    </bean>
+
+    <bean id="awsUploader" class="com.saven.dailyalert.batch.AwsS3FileUploader">
+        <property name="accessKey" value="${aws.access.key}"/>
+        <property name="secretKey" value="${aws.secret.key}"/>
+        <property name="bucketName" value="${aws.bucket.name}"/>
+    </bean>
+
+
+</beans>

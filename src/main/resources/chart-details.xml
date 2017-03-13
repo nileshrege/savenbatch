@@ -1,0 +1,31 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/util  http://www.springframework.org/schema/util/spring-util-3.1.xsd">
+
+    <util:map id="seriesConfigMap">
+        <entry key="1" value-ref="airflowSeries" />
+        <entry key="2" value-ref="energySeries" />
+    </util:map>
+
+    <bean id="airflowSeries" class="com.saven.dailyalert.domain.XYSeriesConfig">
+        <property name="name" value="airflow"/>
+        <property name="xColumn" value="A"/>
+        <property name="yColumn" value="DTR"/>
+        <property name="xColumnValueMapper" ref="xColumnValueMapper"/>
+        <property name="yColumnValueMapper" ref="yColumnValueMapper"/>
+    </bean>
+
+    <bean id="energySeries" class="com.saven.dailyalert.domain.XYSeriesConfig">
+        <property name="name" value="energy"/>
+        <property name="xColumn" value="A"/>
+        <property name="yColumn" value="DKWH"/>
+        <property name="xColumnValueMapper" ref="xColumnValueMapper"/>
+        <property name="yColumnValueMapper" ref="yColumnValueMapper"/>
+
+    </bean>
+
+    <bean id="xColumnValueMapper" class="com.saven.dailyalert.domain.DateTimeMapper"/>
+    <bean id="yColumnValueMapper" class="com.saven.dailyalert.domain.DoubleValueMapper"/>
+
+</beans>

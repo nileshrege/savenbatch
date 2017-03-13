@@ -1,0 +1,32 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/util  http://www.springframework.org/schema/util/spring-util-3.1.xsd">
+
+    <util:list id="applicableFormulasList">
+        <ref bean="airflowFormulas"/>
+        <ref bean="energyFormulas"/>
+    </util:list>
+
+    <bean id="airflowFormulas" class="com.saven.dailyalert.domain.ApplicableFormulas">
+        <property name="rowIdColumnValue" value="1"/>
+        <property name="columns">
+            <map>
+                <entry key="TR" value="(D*65536+E)/10" />   <!-- Totaliser Reading -->
+                <entry key="DTR" value="TR-tr" />           <!-- Diff In Totaliser is diff between current and prev TR-->
+            </map>
+        </property>
+    </bean>
+
+    <bean id="energyFormulas" class="com.saven.dailyalert.domain.ApplicableFormulas">
+        <property name="rowIdColumnValue" value="2"/>
+        <property name="columns">
+            <map>
+                <entry key="KWH" value="AG/1000" />         <!--KWH Reading -->
+                <entry key="DKWH" value="KWH-kwh" />        <!--KWH diff-->
+            </map>
+        </property>
+    </bean>
+
+
+</beans>
