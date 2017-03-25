@@ -7,9 +7,12 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.logging.Logger;
 
 @Component
 public class JobCompletionNotificationListener extends JobExecutionListenerSupport {
+
+    Logger logger = Logger.getLogger(JobCompletionNotificationListener.class.getName());
 
     AwsS3FileUploader fileUploader;
 
@@ -29,11 +32,13 @@ public class JobCompletionNotificationListener extends JobExecutionListenerSuppo
 
         File folder = new File(folderName);
         File[] listOfFiles = folder.listFiles();
+        logger.info("total files to upload "+listOfFiles.length);
         if (listOfFiles != null && !skipUpload) {
             for (int i = 0; i < listOfFiles.length; i++) {
                 if (listOfFiles[i].isFile()) {
                     File file = listOfFiles[i];
                     if (file.exists() && !file.isDirectory()) {
+                        logger.info("starting to upload file "+file.getName());
                         fileUploader.upload(file, prefix+dateTime+extension);
                     }
                 }

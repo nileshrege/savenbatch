@@ -7,8 +7,11 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
 import java.io.File;
+import java.util.logging.Logger;
 
 public class AwsS3FileUploader {
+
+    Logger logger = Logger.getLogger(AwsS3FileUploader.class.getName());
 
     String accessKey;
 
@@ -21,6 +24,7 @@ public class AwsS3FileUploader {
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
         AmazonS3 s3client = new AmazonS3Client(credentials);
         s3client.putObject(new PutObjectRequest(bucketName, uploadAs, file));
+        logger.info("upload complete.");
     }
 
     public String getAccessKey() {

@@ -1,5 +1,11 @@
 package com.saven.dailyalert.batch;
 
+import static java.nio.file.attribute.PosixFilePermission.GROUP_EXECUTE;
+import static java.nio.file.attribute.PosixFilePermission.GROUP_READ;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
+
 import com.saven.dailyalert.domain.Column;
 import com.saven.dailyalert.domain.Row;
 import com.saven.dailyalert.domain.XYSeriesConfig;
@@ -21,13 +27,20 @@ import org.springframework.batch.item.ItemWriter;
 
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.text.NumberFormat;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class LineChartWriter implements ItemWriter {
 
+    Logger logger = Logger.getLogger(LineChartWriter.class.getName());
+
+    String directory;
     String chartSaveAs;
     String label;
     String domain;
@@ -46,8 +59,23 @@ public class LineChartWriter implements ItemWriter {
         XYSeriesCollection dataSet = new XYSeriesCollection();
         xySeriesMap.entrySet().forEach(e -> dataSet.addSeries(e.getValue()));
         JFreeChart chart = createChart(dataSet);
-        File file = new File(chartSaveAs);
+        File file = createFile();
         ChartUtilities.saveChartAsJPEG(file ,chart, width ,height);
+        logger.info("file created at "+file.getAbsolutePath());
+    }
+
+    private File createFile() {
+        File directory = new File("/home", getDirectory());
+        directory.mkdir();
+        File file = new File(directory, chartSaveAs);
+        try {
+            file.createNewFile();
+            Files.setPosixFilePermissions(file.toPath(),
+                    EnumSet.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ, GROUP_EXECUTE));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return file;
     }
 
     private void populateSeries(Row row) {
@@ -61,8 +89,8 @@ public class LineChartWriter implements ItemWriter {
 
         XYSeries xySeries = xySeriesMap.get(identityColumn.getValue());
 
-        double xData = config.getxColumnValueMapper().map(row.getColumn(config.getxColumn()).get().getValue());
-        double yData = config.getyColumnValueMapper().map(row.getColumn(config.getyColumn()).get().getValue());
+        double xData = config.getXColumnValueMapper().map(row.getColumn(config.getXColumn()).get().getValue());
+        double yData = config.getYColumnValueMapper().map(row.getColumn(config.getYColumn()).get().getValue());
 
         xySeries.add(xData, yData);
     }
@@ -180,5 +208,13 @@ public class LineChartWriter implements ItemWriter {
 
     public void setWidth(Integer width) {
         this.width = width;
+    }
+
+    public String getDirectory() {
+        return directory;
+    }
+
+    public void setDirectory(String directory) {
+        this.directory = directory;
     }
 }

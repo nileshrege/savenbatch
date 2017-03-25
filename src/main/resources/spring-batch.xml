@@ -14,6 +14,7 @@
             <tasklet>
                 <chunk commit-interval="${row.commit.size}"
                        reader="multiResourceReader"
+                       processor=""
                        writer="chartWriter"
                 />
             </tasklet>
@@ -40,6 +41,7 @@
         <property name="width" value="${chart.width}"/>
         <property name="domain" value="${chart.domain.label}"/>
         <property name="range" value="${chart.range.label}"/>
+        <property name="directory" value="${docker.home.child.dir}"/>
     </bean>
 
     <bean id="multiResourceReader" class=" org.springframework.batch.item.file.MultiResourceItemReader">

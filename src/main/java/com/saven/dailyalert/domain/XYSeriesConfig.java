@@ -20,35 +20,35 @@ public class XYSeriesConfig {
         this.name = name;
     }
 
-    public String getxColumn() {
+    public String getXColumn() {
         return xColumn;
     }
 
-    public void setxColumn(String xColumn) {
+    public void setXColumn(String xColumn) {
         this.xColumn = xColumn;
     }
 
-    public String getyColumn() {
+    public String getYColumn() {
         return yColumn;
     }
 
-    public void setyColumn(String yColumn) {
+    public void setYColumn(String yColumn) {
         this.yColumn = yColumn;
     }
 
-    public ColumnValueMapper getxColumnValueMapper() {
+    public ColumnValueMapper getXColumnValueMapper() {
         return xColumnValueMapper;
     }
 
-    public void setxColumnValueMapper(ColumnValueMapper xColumnValueMapper) {
+    public void setXColumnValueMapper(ColumnValueMapper xColumnValueMapper) {
         this.xColumnValueMapper = xColumnValueMapper;
     }
 
-    public ColumnValueMapper getyColumnValueMapper() {
+    public ColumnValueMapper getYColumnValueMapper() {
         return yColumnValueMapper;
     }
 
-    public void setyColumnValueMapper(ColumnValueMapper yColumnValueMapper) {
+    public void setYColumnValueMapper(ColumnValueMapper yColumnValueMapper) {
         this.yColumnValueMapper = yColumnValueMapper;
     }
 }
