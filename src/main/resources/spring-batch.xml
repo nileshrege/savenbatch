@@ -1,9 +1,20 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aws-context="http://www.springframework.org/schema/cloud/aws/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.springframework.org/schema/batch
-        http://www.springframework.org/schema/batch/spring-batch.xsd">
+        http://www.springframework.org/schema/batch/spring-batch.xsd
+        http://www.springframework.org/schema/cloud/aws/context
+        http://www.springframework.org/schema/cloud/aws/context/spring-cloud-aws-context.xsd">
+
+    <aws-context:context-region region="us-east-1"/>
+
+    <aws-context:context-credentials>
+        <aws-context:simple-credentials access-key="${cloud.aws.credentials.accessKey}" secret-key="${cloud.aws.credentials.secretKey}" />
+    </aws-context:context-credentials>
+
+    <aws-context:context-resource-loader region="us-east-1"/>
 
     <import resource="formula-columns.xml"/>
     <import resource="chart-details.xml"/>
@@ -20,17 +31,12 @@
             </tasklet>
         </step>
         <listeners>
-            <listener ref="jobCompletionNotificationListener"/>
+            <listener ref="jobNotificationListener"/>
         </listeners>
     </job>
 
-    <bean id="jobCompletionNotificationListener"
-          class="com.saven.dailyalert.batch.JobCompletionNotificationListener">
-        <property name="fileUploader" ref="awsUploader"/>
-        <property name="folderName" value="${aws.upload.from.folder.name}"/>
-        <property name="prefix" value="${aws.file.prefix}"/>
-        <property name="extension" value="${aws.file.extension}"/>
-        <property name="skipUpload" value="${aws.file.skip.upload}"/>
+    <bean id="jobNotificationListener" class="com.saven.dailyalert.batch.JobNotificationListener">
+        <property name="ftpFilesDownloader" ref="ftpFilesDownloader"/>
     </bean>
 
     <bean id="chartWriter" class="com.saven.dailyalert.batch.LineChartWriter">
@@ -42,10 +48,13 @@
         <property name="domain" value="${chart.domain.label}"/>
         <property name="range" value="${chart.range.label}"/>
         <property name="directory" value="${docker.home.child.dir}"/>
+        <property name="fileUploader" ref="awsUploader"/>
+        <property name="prefix" value="${aws.file.prefix}"/>
+        <property name="extension" value="${aws.file.extension}"/>
+        <property name="skipUpload" value="${aws.file.skip.upload}"/>
     </bean>
 
     <bean id="multiResourceReader" class=" org.springframework.batch.item.file.MultiResourceItemReader">
-        <property name="resources" value="${file.resources}" />
         <property name="delegate" >
             <bean class="org.springframework.batch.item.file.FlatFileItemReader">
                 <property name="recordSeparatorPolicy"
@@ -54,6 +63,8 @@
             </bean>
         </property>
     </bean>
+
+    <bean id="s3ResourceLoader" class="com.saven.dailyalert.batch.S3ResourceLoader"/>
 
     <bean id="productRecordSeparatorPolicy"
           class="org.springframework.batch.item.file.separator.DefaultRecordSeparatorPolicy"/>
@@ -78,13 +89,15 @@
         <property name="bucketName" value="${aws.bucket.name}"/>
     </bean>
 
-<bean id="ftpClient" class="com.saven.dailyalert.batch.FtpFilesDownloader">
-    <property name="serverAddress" value="${ftp.server.address}"/>
-    <property name="userId" value="${ftp.user.id}"/>
-    <property name="password" value="${ftp.user.password}"/>
-    <property name="remoteDirectory" value="${ftp.remote.dir}"/>
-    <property name="localDirectory" value="${ftp.local.dir}"/>
-    <property name="deleteFileAfterRead" value="${ftp.delete.files.after.read}"/>
+<bean id="ftpFilesDownloader" class="com.saven.dailyalert.batch.FtpFilesDownloader">
+    <property name="awsS3FileUploader" ref="awsUploader"/>
+    <property name="server" value="${ftp.server}"/>
+    <property name="port" value="${ftp.port}"/>
+    <property name="user" value="${ftp.user}"/>
+    <property name="password" value="${ftp.password}"/>
+    <property name="directory" value="${ftp.remote.dir}"/>
+    <property name="s3bucket" value="${cloud.aws.s3.bucket}"/>
+    <property name="deleteAfterRead" value="${ftp.delete.after.read}"/>
 </bean>
 
 </beans>

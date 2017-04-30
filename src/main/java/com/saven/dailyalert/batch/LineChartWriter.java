@@ -1,11 +1,5 @@
 package com.saven.dailyalert.batch;
 
-import static java.nio.file.attribute.PosixFilePermission.GROUP_EXECUTE;
-import static java.nio.file.attribute.PosixFilePermission.GROUP_READ;
-import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
-import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
-import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
-
 import com.saven.dailyalert.domain.Column;
 import com.saven.dailyalert.domain.Row;
 import com.saven.dailyalert.domain.XYSeriesConfig;
@@ -26,11 +20,11 @@ import org.jfree.data.xy.XYSeriesCollection;
 import org.springframework.batch.item.ItemWriter;
 
 import java.awt.*;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.text.NumberFormat;
-import java.util.EnumSet;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +32,7 @@ import java.util.logging.Logger;
 
 public class LineChartWriter implements ItemWriter {
 
+    AwsS3FileUploader fileUploader;
     Logger logger = Logger.getLogger(LineChartWriter.class.getName());
 
     String directory;
@@ -48,34 +43,34 @@ public class LineChartWriter implements ItemWriter {
     Integer height;
     Integer width;
 
+    String prefix;
+    String extension;
+    boolean skipUpload;
+
+
     Map<String, XYSeriesConfig> seriesConfigMap;
 
     Map<String, XYSeries> xySeriesMap = new HashMap<>();
 
     @Override
     public void write(List list) throws Exception {
-
         list.stream().forEach(r -> populateSeries((Row) r));
         XYSeriesCollection dataSet = new XYSeriesCollection();
         xySeriesMap.entrySet().forEach(e -> dataSet.addSeries(e.getValue()));
         JFreeChart chart = createChart(dataSet);
-        File file = createFile();
-        ChartUtilities.saveChartAsJPEG(file ,chart, width ,height);
-        logger.info("file created at "+file.getAbsolutePath());
-    }
-
-    private File createFile() {
-        File directory = new File("/home", getDirectory());
-        directory.mkdir();
-        File file = new File(directory, chartSaveAs);
+        InputStream is = null;
         try {
-            file.createNewFile();
-            Files.setPosixFilePermissions(file.toPath(),
-                    EnumSet.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ, GROUP_EXECUTE));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            is = new ByteArrayInputStream(ChartUtilities.encodeAsPNG(chart.createBufferedImage(width, height)));
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("ddMMyyyy"); //-hh:mma
+            String dateTime = LocalDateTime.now().format(formatter);
+
+            if (!skipUpload) {
+                fileUploader.upload(is, prefix + dateTime +"."+ extension);
+            }
+        }finally {
+            if(is != null) is.close();
         }
-        return file;
+
     }
 
     private void populateSeries(Row row) {
@@ -216,5 +211,37 @@ public class LineChartWriter implements ItemWriter {
 
     public void setDirectory(String directory) {
         this.directory = directory;
+    }
+
+    public AwsS3FileUploader getFileUploader() {
+        return fileUploader;
+    }
+
+    public void setFileUploader(AwsS3FileUploader fileUploader) {
+        this.fileUploader = fileUploader;
+    }
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    public String getExtension() {
+        return extension;
+    }
+
+    public void setExtension(String extension) {
+        this.extension = extension;
+    }
+
+    public boolean isSkipUpload() {
+        return skipUpload;
+    }
+
+    public void setSkipUpload(boolean skipUpload) {
+        this.skipUpload = skipUpload;
     }
 }

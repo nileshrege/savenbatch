@@ -4,9 +4,10 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
-import java.io.File;
+import java.io.InputStream;
 import java.util.logging.Logger;
 
 public class AwsS3FileUploader {
@@ -19,11 +20,24 @@ public class AwsS3FileUploader {
 
     String bucketName;
 
-    public void upload(File file, String uploadAs) {
-
+    public void createBucket(String bucketName) {
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
         AmazonS3 s3client = new AmazonS3Client(credentials);
-        s3client.putObject(new PutObjectRequest(bucketName, uploadAs, file));
+        s3client.createBucket(bucketName);
+        logger.info("bucket created by name " + bucketName);
+    }
+
+    public void upload(InputStream is, String uploadAs) {
+        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+        AmazonS3 s3client = new AmazonS3Client(credentials);
+        s3client.putObject(new PutObjectRequest(bucketName, uploadAs, is, new ObjectMetadata()));
+        logger.info("upload complete.");
+    }
+
+    public void upload(InputStream is, String uploadAs, String bucketName) {
+        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+        AmazonS3 s3client = new AmazonS3Client(credentials);
+        s3client.putObject(new PutObjectRequest(bucketName, uploadAs, is, new ObjectMetadata()));
         logger.info("upload complete.");
     }
 
