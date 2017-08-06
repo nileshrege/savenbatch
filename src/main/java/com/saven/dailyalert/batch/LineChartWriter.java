@@ -3,6 +3,7 @@ package com.saven.dailyalert.batch;
 import com.saven.dailyalert.domain.Column;
 import com.saven.dailyalert.domain.Row;
 import com.saven.dailyalert.domain.XYSeriesConfig;
+import com.saven.dailyalert.util.AwsS3FileUploader;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartUtilities;

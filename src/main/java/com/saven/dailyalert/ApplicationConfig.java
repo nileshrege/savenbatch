@@ -1,4 +1,4 @@
-package com.saven.dailyalert.batch;
+package com.saven.dailyalert;
 
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
@@ -14,9 +14,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Configuration
 @EnableAutoConfiguration
-@ImportResource({"classpath*:spring-batch.xml"})
+@ImportResource({"classpath*:applicationContext.xml"})
 @PropertySource("classpath:application.properties")
 @EnableBatchProcessing
-public class BatchConfiguration {
+public class ApplicationConfig {
 
 }

@@ -1,4 +1,4 @@
-package com.saven.dailyalert.batch;
+package com.saven.dailyalert.util;
 
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
@@ -10,67 +10,90 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class FtpFilesDownloader {
+public class FtpFileTransfer {
 
-    Logger logger = Logger.getLogger(FtpFilesDownloader.class.getName());
+    private String dateFormat;
 
-    AwsS3FileUploader awsS3FileUploader;
+    private Logger logger = Logger.getLogger(FtpFileTransfer.class.getName());
+
+    private AwsS3FileUploader awsS3FileUploader;
     private String server;
     private int port;
     private String user;
     private String password;
     private String directory;
     private String s3bucket;
-    boolean deleteAfterRead;
+    private boolean deleteAfterRead;
 
-    public void download() throws IOException {
+    private FTPClient connect(String server, int port, String user, String password) throws IOException {
         FTPClient ftp = new FTPClient();
         try {
             ftp.connect(server, port);
-            showServerReply(ftp);
+        }
+        catch (IOException e) {
+            logger.log(Level.SEVERE,  e.getMessage());
+            throw e;
+        }
+        showServerReply(ftp);
+        int replyCode = ftp.getReplyCode();
+        if (!FTPReply.isPositiveCompletion(replyCode)) {
+            throw new RuntimeException("failed to connect ftp server");
+        }
 
-            int replyCode = ftp.getReplyCode();
-            if (!FTPReply.isPositiveCompletion(replyCode)) {
-                logger.info("failed to connect ftp server");
-                return;
-            }
-            ftp.enterLocalPassiveMode();
-            ftp.setRemoteVerificationEnabled(false);
-            ftp.setControlKeepAliveTimeout(1000000);
-            boolean success = ftp.login(user, password);
-            showServerReply(ftp);
+        ftp.enterLocalPassiveMode();
+        ftp.setRemoteVerificationEnabled(false);
+        ftp.setControlKeepAliveTimeout(1000000);
+        boolean success = false;
+        try {
+            success = ftp.login(user, password);
+        }
+        catch (IOException e) {
+            logger.log(Level.SEVERE,  e.getMessage());
+            throw e;
+        }
+        showServerReply(ftp);
+        if (!success) {
+            throw new RuntimeException("could not login to the server");
+        }
 
-            if (!success) {
-                logger.info("could not login to the server");
-                return;
-            }
+        return ftp;
+    }
 
-            logger.info(ftp.printWorkingDirectory());
-            success = ftp.changeWorkingDirectory(directory);
-            logger.info(ftp.printWorkingDirectory());
-            showServerReply(ftp);
-
-            if (!success) {
-                logger.info("failed to change working directory, logging out.");
-                logout(ftp);
-            }
-
-            ftp.setDataTimeout(1000000);
-            logger.info("successfully changed working directory.");
-
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("ddMMyyyy"); //-hh:mma
-            String dateTime = LocalDateTime.now().format(formatter);
-            awsS3FileUploader.createBucket(s3bucket+"-"+dateTime);
-
-            transferFiles(ftp, dateTime);
-
-        } catch (IOException e) {
-            logger.info(e.getMessage());
-        } finally {
+    private boolean changeDirectory(FTPClient ftp, String directory) throws IOException {
+        logger.info(ftp.printWorkingDirectory());
+        boolean success = ftp.changeWorkingDirectory(directory);
+        logger.info(ftp.printWorkingDirectory());
+        showServerReply(ftp);
+        if (!success) {
+            logger.info("failed to change working directory, logging out.");
             logout(ftp);
         }
+        logger.info("successfully changed working directory to "+directory);
+        return true;
+    }
+
+    public void transfer() {
+        FTPClient ftp = null;
+        try {
+            ftp = connect(server, port, user, password);
+            changeDirectory(ftp, directory);
+            transferFiles(ftp);
+        }catch (Exception e) {
+            logger.log(Level.SEVERE, e.getMessage());
+        } finally {
+            try {
+                if(ftp != null)
+                    logout(ftp);
+            }
+            catch (IOException e) {
+                logger.log(Level.SEVERE, e.getMessage());
+            }
+        }
+
+
     }
 
     private void logout(FTPClient ftp) throws IOException {
@@ -78,7 +101,12 @@ public class FtpFilesDownloader {
         ftp.disconnect();
     }
 
-    private void transferFiles(FTPClient ftp, String dateTime ) throws IOException{
+    private void transferFiles(FTPClient ftp) throws IOException{
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat); //-hh:mma
+        String dateTime = LocalDateTime.now().format(formatter);
+
+        awsS3FileUploader.createBucket(s3bucket);
+        ftp.setDataTimeout(1000000);
         ftp.setFileType(FTP.BINARY_FILE_TYPE);
         FTPListParseEngine engine = ftp.initiateListParsing(directory);
 
@@ -94,7 +122,7 @@ public class FtpFilesDownloader {
 
                         InputStream is = ftp.retrieveFileStream(file.getName());
                         if (is != null) {
-                            awsS3FileUploader.upload(is, file.getName(), s3bucket+"-"+dateTime);
+                            awsS3FileUploader.upload(is, dateTime+"/"+file.getName(), s3bucket);
                         }
                         //close output stream
                         if (is != null) is.close();
@@ -102,13 +130,14 @@ public class FtpFilesDownloader {
                         ftp.completePendingCommand();
 
                         //delete the file
-//                        if(deleteAfterRead) ftp.deleteFile(file.getName());
+                        //                        if(deleteAfterRead) ftp.deleteFile(file.getName());
 
                     }
                 }
             }
         }catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage());
+            throw e;
         }
     }
 
@@ -184,4 +213,14 @@ public class FtpFilesDownloader {
     public void setDeleteAfterRead(boolean deleteAfterRead) {
         this.deleteAfterRead = deleteAfterRead;
     }
+
+    public String getDateFormat() {
+        return dateFormat;
+    }
+
+    public void setDateFormat(String dateFormat) {
+        this.dateFormat = dateFormat;
+    }
 }
+
+

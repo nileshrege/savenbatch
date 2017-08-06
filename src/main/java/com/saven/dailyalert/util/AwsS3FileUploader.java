@@ -1,4 +1,4 @@
-package com.saven.dailyalert.batch;
+package com.saven.dailyalert.util;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -38,7 +38,7 @@ public class AwsS3FileUploader {
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
         AmazonS3 s3client = new AmazonS3Client(credentials);
         s3client.putObject(new PutObjectRequest(bucketName, uploadAs, is, new ObjectMetadata()));
-        logger.info("upload complete.");
+        logger.info("upload complete to "+ bucketName+"/"+uploadAs);
     }
 
     public String getAccessKey() {

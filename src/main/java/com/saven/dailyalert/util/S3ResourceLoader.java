@@ -1,4 +1,4 @@
-package com.saven.dailyalert.batch;
+package com.saven.dailyalert.util;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 
@@ -22,6 +22,9 @@ public class S3ResourceLoader {
     @Value("${cloud.aws.s3.bucket.file}")
     private String file;
 
+    @Value("${batch.datetime.pattern}")
+    private String dateFormat;
+
     @Autowired
     private ResourceLoader resourceLoader;
 
@@ -29,9 +32,9 @@ public class S3ResourceLoader {
     private ResourcePatternResolver resourcePatternResolver;
 
     public Resource[] getResources() throws IOException {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("ddMMyyyy"); //-hh:mma
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat); //-hh:mma
         String dateTime = LocalDateTime.now().format(formatter);
-        Resource[] resources =  this.resourcePatternResolver.getResources("s3://"+bucket+"-"+dateTime+"/"+file);
+        Resource[] resources =  this.resourcePatternResolver.getResources("s3://"+bucket+"/"+dateTime+"/"+file);
         return resources;
     }
 }

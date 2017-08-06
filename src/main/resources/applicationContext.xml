@@ -36,7 +36,7 @@
     </job>
 
     <bean id="jobNotificationListener" class="com.saven.dailyalert.batch.JobNotificationListener">
-        <property name="ftpFilesDownloader" ref="ftpFilesDownloader"/>
+        <property name="ftpFileTransfer" ref="ftpFileTransfer"/>
     </bean>
 
     <bean id="chartWriter" class="com.saven.dailyalert.batch.LineChartWriter">
@@ -47,7 +47,7 @@
         <property name="width" value="${chart.width}"/>
         <property name="domain" value="${chart.domain.label}"/>
         <property name="range" value="${chart.range.label}"/>
-        <property name="directory" value="${docker.home.child.dir}"/>
+        <!--<property name="directory" value="${docker.home.child.dir}"/>-->
         <property name="fileUploader" ref="awsUploader"/>
         <property name="prefix" value="${aws.file.prefix}"/>
         <property name="extension" value="${aws.file.extension}"/>
@@ -64,7 +64,7 @@
         </property>
     </bean>
 
-    <bean id="s3ResourceLoader" class="com.saven.dailyalert.batch.S3ResourceLoader"/>
+    <bean id="s3ResourceLoader" class="com.saven.dailyalert.util.S3ResourceLoader"/>
 
     <bean id="productRecordSeparatorPolicy"
           class="org.springframework.batch.item.file.separator.DefaultRecordSeparatorPolicy"/>
@@ -83,13 +83,13 @@
         <property name="applicableFormulasList" ref="applicableFormulasList"/>
     </bean>
 
-    <bean id="awsUploader" class="com.saven.dailyalert.batch.AwsS3FileUploader">
+    <bean id="awsUploader" class="com.saven.dailyalert.util.AwsS3FileUploader">
         <property name="accessKey" value="${aws.access.key}"/>
         <property name="secretKey" value="${aws.secret.key}"/>
         <property name="bucketName" value="${aws.bucket.name}"/>
     </bean>
 
-<bean id="ftpFilesDownloader" class="com.saven.dailyalert.batch.FtpFilesDownloader">
+<bean id="ftpFileTransfer" class="com.saven.dailyalert.util.FtpFileTransfer">
     <property name="awsS3FileUploader" ref="awsUploader"/>
     <property name="server" value="${ftp.server}"/>
     <property name="port" value="${ftp.port}"/>
@@ -98,6 +98,7 @@
     <property name="directory" value="${ftp.remote.dir}"/>
     <property name="s3bucket" value="${cloud.aws.s3.bucket}"/>
     <property name="deleteAfterRead" value="${ftp.delete.after.read}"/>
+    <property name="dateFormat" value="${batch.datetime.pattern}"/>
 </bean>
 
 </beans>

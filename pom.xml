@@ -94,26 +94,6 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-            <!--<plugin>-->
-                <!--<groupId>com.spotify</groupId>-->
-                <!--<artifactId>docker-maven-plugin</artifactId>-->
-                <!--<version>0.4.13</version>-->
-
-                <!--<configuration>-->
-                    <!--<imageName>daily-alert/${project.artifactId}</imageName>-->
-                    <!--&lt;!&ndash;<baseImage>java:8</baseImage>&ndash;&gt;-->
-                    <!--<dockerDirectory>src/main/docker</dockerDirectory>-->
-                    <!--<dockerHost>https://192.168.99.100:2376</dockerHost>-->
-                    <!--<dockerCertPath>/Users/nrege/.docker/machine/machines/default</dockerCertPath>-->
-                    <!--<resources>-->
-                        <!--<resource>-->
-                            <!--<targetPath>/</targetPath>-->
-                            <!--<directory>${project.build.directory}</directory>-->
-                            <!--<include>${project.build.finalName}.jar</include>-->
-                        <!--</resource>-->
-                    <!--</resources>-->
-                <!--</configuration>-->
-            <!--</plugin>-->
         </plugins>
         <finalName>savenbatch</finalName>
     </build>
