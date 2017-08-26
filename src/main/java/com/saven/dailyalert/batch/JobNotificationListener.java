@@ -18,6 +18,8 @@ public class JobNotificationListener extends JobExecutionListenerSupport {
 
     FtpFileTransfer ftpFileTransfer;
 
+    boolean skipUpload;
+
     @Autowired
     MultiResourceItemReader multiResourceItemReader;
 
@@ -27,7 +29,10 @@ public class JobNotificationListener extends JobExecutionListenerSupport {
     @Override
     public void beforeJob(JobExecution jobExecution){
         try {
-            ftpFileTransfer.transfer();
+            if(!skipUpload) {
+                ftpFileTransfer.transfer();
+            }
+
             multiResourceItemReader.setResources(s3ResourceLoader.getResources());
         }
         catch (Exception e) {
@@ -41,5 +46,13 @@ public class JobNotificationListener extends JobExecutionListenerSupport {
 
     public void setFtpFileTransfer(FtpFileTransfer ftpFileTransfer) {
         this.ftpFileTransfer = ftpFileTransfer;
+    }
+
+    public boolean isSkipUpload() {
+        return skipUpload;
+    }
+
+    public void setSkipUpload(boolean skipUpload) {
+        this.skipUpload = skipUpload;
     }
 }

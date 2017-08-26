@@ -8,14 +8,19 @@ import org.apache.commons.net.ftp.FTPReply;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class FtpFileTransfer {
 
     private String dateFormat;
+
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+    String today = sdf.format(Calendar.getInstance().getTime());
 
     private Logger logger = Logger.getLogger(FtpFileTransfer.class.getName());
 
@@ -34,7 +39,7 @@ public class FtpFileTransfer {
             ftp.connect(server, port);
         }
         catch (IOException e) {
-            logger.log(Level.SEVERE,  e.getMessage());
+            logger.log(Level.SEVERE, e.getMessage());
             throw e;
         }
         showServerReply(ftp);
@@ -51,7 +56,7 @@ public class FtpFileTransfer {
             success = ftp.login(user, password);
         }
         catch (IOException e) {
-            logger.log(Level.SEVERE,  e.getMessage());
+            logger.log(Level.SEVERE, e.getMessage());
             throw e;
         }
         showServerReply(ftp);
@@ -71,7 +76,7 @@ public class FtpFileTransfer {
             logger.info("failed to change working directory, logging out.");
             logout(ftp);
         }
-        logger.info("successfully changed working directory to "+directory);
+        logger.info("successfully changed working directory to " + directory);
         return true;
     }
 
@@ -81,18 +86,20 @@ public class FtpFileTransfer {
             ftp = connect(server, port, user, password);
             changeDirectory(ftp, directory);
             transferFiles(ftp);
-        }catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage());
-        } finally {
+        }
+        finally {
             try {
-                if(ftp != null)
+                if (ftp != null) {
                     logout(ftp);
+                }
             }
             catch (IOException e) {
                 logger.log(Level.SEVERE, e.getMessage());
             }
         }
-
 
     }
 
@@ -101,11 +108,11 @@ public class FtpFileTransfer {
         ftp.disconnect();
     }
 
-    private void transferFiles(FTPClient ftp) throws IOException{
+    private void transferFiles(FTPClient ftp) throws IOException {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat); //-hh:mma
         String dateTime = LocalDateTime.now().format(formatter);
 
-        awsS3FileUploader.createBucket(s3bucket);
+        //        awsS3FileUploader.createBucket(s3bucket);
         ftp.setDataTimeout(1000000);
         ftp.setFileType(FTP.BINARY_FILE_TYPE);
         FTPListParseEngine engine = ftp.initiateListParsing(directory);
@@ -118,14 +125,22 @@ public class FtpFileTransfer {
                         if (!file.isFile()) {
                             continue;
                         }
-                        logger.info("file is " + file.getName());
+                        logger.info("file read: " + file.getName());
+                        String fileDate = file.getName().substring(file.getName().length() - 16, file.getName().length() - 8);
+                        logger.info("today: "+today+" file date: "+fileDate);
+                        if (!today.equals(fileDate)) {
+                            logger.info("skipping file: " + file.getName());
+                            continue;
+                        }
 
                         InputStream is = ftp.retrieveFileStream(file.getName());
                         if (is != null) {
-                            awsS3FileUploader.upload(is, dateTime+"/"+file.getName(), s3bucket);
+                            awsS3FileUploader.upload(is, dateTime + "/" + file.getName(), s3bucket);
                         }
                         //close output stream
-                        if (is != null) is.close();
+                        if (is != null) {
+                            is.close();
+                        }
 
                         ftp.completePendingCommand();
 
@@ -135,7 +150,8 @@ public class FtpFileTransfer {
                     }
                 }
             }
-        }catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage());
             throw e;
         }
@@ -221,6 +237,7 @@ public class FtpFileTransfer {
     public void setDateFormat(String dateFormat) {
         this.dateFormat = dateFormat;
     }
+
 }
 
 

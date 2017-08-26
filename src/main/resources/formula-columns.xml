@@ -3,13 +3,8 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.springframework.org/schema/util  http://www.springframework.org/schema/util/spring-util-3.1.xsd">
 
-    <util:list id="applicableFormulasList">
-        <ref bean="airflowFormulas"/>
-        <ref bean="energyFormulas"/>
-    </util:list>
-
-    <bean id="airflowFormulas" class="com.saven.dailyalert.domain.ApplicableFormulas">
-        <property name="rowIdColumnValue" value="1"/>
+    <!-- these beans groups formula columns applicable to row id-->
+    <bean id="airflowConsumption" class="com.saven.dailyalert.domain.ApplicableFormulas">
         <property name="columns">
             <map>
                 <entry key="TR" value="(D*65536+E)/10" />   <!-- Totaliser Reading -->
@@ -18,8 +13,7 @@
         </property>
     </bean>
 
-    <bean id="energyFormulas" class="com.saven.dailyalert.domain.ApplicableFormulas">
-        <property name="rowIdColumnValue" value="2"/>
+    <bean id="energyConsumption" class="com.saven.dailyalert.domain.ApplicableFormulas">
         <property name="columns">
             <map>
                 <entry key="KWH" value="AG/1000" />         <!--KWH Reading -->
@@ -28,5 +22,11 @@
         </property>
     </bean>
 
+    <!-- here we define which group of formula columns apply to a row id -->
+    <util:map id="applicableFormulaMap" key-type="java.lang.Integer">
+        <entry key="1" value-ref="airflowConsumption"/>
+        <entry key="2" value-ref="energyConsumption" />
+        <entry key="3" value-ref="energyConsumption" />
+    </util:map>
 
 </beans>

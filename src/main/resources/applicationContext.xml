@@ -8,13 +8,13 @@
         http://www.springframework.org/schema/cloud/aws/context
         http://www.springframework.org/schema/cloud/aws/context/spring-cloud-aws-context.xsd">
 
-    <aws-context:context-region region="us-east-1"/>
+    <aws-context:context-region region="${cloud.aws.region}"/>
 
     <aws-context:context-credentials>
         <aws-context:simple-credentials access-key="${cloud.aws.credentials.accessKey}" secret-key="${cloud.aws.credentials.secretKey}" />
     </aws-context:context-credentials>
 
-    <aws-context:context-resource-loader region="us-east-1"/>
+    <aws-context:context-resource-loader  region="${cloud.aws.region}"/>
 
     <import resource="formula-columns.xml"/>
     <import resource="chart-details.xml"/>
@@ -26,7 +26,7 @@
                 <chunk commit-interval="${row.commit.size}"
                        reader="multiResourceReader"
                        processor=""
-                       writer="chartWriter"
+                       writer="dynamoDbWriter"
                 />
             </tasklet>
         </step>
@@ -37,9 +37,21 @@
 
     <bean id="jobNotificationListener" class="com.saven.dailyalert.batch.JobNotificationListener">
         <property name="ftpFileTransfer" ref="ftpFileTransfer"/>
+        <property name="skipUpload" value="true"/>
     </bean>
 
-    <bean id="chartWriter" class="com.saven.dailyalert.batch.LineChartWriter">
+    <bean id="dynamoDbWriter" class="com.saven.dailyalert.batch.DynamoDbWriter">
+        <property name="region" value="${cloud.aws.region}"/>
+        <property name="accessKey" value="${cloud.aws.credentials.accessKey}"/>
+        <property name="secretKey" value="${cloud.aws.credentials.secretKey}"/>
+        <property name="tableName" value="${cloud.aws.dynamodb.table.name}"/>
+        <property name="hashKeyName" value="${cloud.aws.dynamodb.table.primaryKey.column}"/>
+        <property name="rangeKeyName" value="${cloud.aws.dynamodb.table.sortKey.column}"/>
+        <property name="hashKeyPrefix" value="${cloud.aws.dynamodb.table.primaryKey.prefix}"/>
+        <property name="hashKeySuffix" value="${cloud.aws.dynamodb.table.primaryKey.suffix}"/>
+    </bean>
+
+    <!--<bean id="chartWriter" class="com.saven.dailyalert.batch.LineChartWriter">
         <property name="seriesConfigMap" ref="seriesConfigMap"/>
         <property name="chartSaveAs" value="${chart.save.as}"/>
         <property name="label" value="${chart.label}"/>
@@ -47,12 +59,12 @@
         <property name="width" value="${chart.width}"/>
         <property name="domain" value="${chart.domain.label}"/>
         <property name="range" value="${chart.range.label}"/>
-        <!--<property name="directory" value="${docker.home.child.dir}"/>-->
+        &lt;!&ndash;<property name="directory" value="${docker.home.child.dir}"/>&ndash;&gt;
         <property name="fileUploader" ref="awsUploader"/>
         <property name="prefix" value="${aws.file.prefix}"/>
         <property name="extension" value="${aws.file.extension}"/>
         <property name="skipUpload" value="${aws.file.skip.upload}"/>
-    </bean>
+    </bean>-->
 
     <bean id="multiResourceReader" class=" org.springframework.batch.item.file.MultiResourceItemReader">
         <property name="delegate" >
@@ -80,13 +92,13 @@
     <bean id="fieldSetMapper" class="com.saven.dailyalert.batch.FieldsSetMapper">
         <property name="printRow" value="false"/>
         <property name="rowIdColumn" value="${row.id.column}"/>
-        <property name="applicableFormulasList" ref="applicableFormulasList"/>
+        <property name="applicableFormulaMap" ref="applicableFormulaMap"/>
     </bean>
 
     <bean id="awsUploader" class="com.saven.dailyalert.util.AwsS3FileUploader">
-        <property name="accessKey" value="${aws.access.key}"/>
-        <property name="secretKey" value="${aws.secret.key}"/>
-        <property name="bucketName" value="${aws.bucket.name}"/>
+        <property name="accessKey" value="${cloud.aws.credentials.accessKey}"/>
+        <property name="secretKey" value="${cloud.aws.credentials.secretKey}"/>
+        <property name="bucketName" value="${cloud.aws.s3.bucket}"/>
     </bean>
 
 <bean id="ftpFileTransfer" class="com.saven.dailyalert.util.FtpFileTransfer">
