@@ -8,6 +8,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.Table;
 import com.saven.dailyalert.domain.Column;
 import com.saven.dailyalert.domain.Row;
 
@@ -38,19 +39,27 @@ public class DynamoDbWriter implements ItemWriter {
 
     private String rangeKeyName;
 
+    private boolean skipWrite;
+
     @Override
     public void write(List list) throws Exception {
-
         DynamoDB dynamoDB = establishConnection();
+        Table t = dynamoDB.getTable(tableName);
         for (Object obj : list) {
             Row row = (Row) obj;
+            logger.info(row.toString());
             Map<String, Object> map = row.getColumns().stream().collect(Collectors.toMap(Column::getName, Column::getValue));
             map.remove(rangeKeyName);
             String hashKeyValue = hashKeyPrefix + row.getColumn(row.getRowIdColumn()).get().getValue() + hashKeySuffix;
             String rangeKeyValue = row.getColumn(rangeKeyName).get().getValue();
             logger.info("Item Primary Key : " + hashKeyValue + " Sort Key: " + rangeKeyValue);
             Item item = new Item().fromMap(map).withPrimaryKey(hashKeyName, Long.valueOf(hashKeyValue), rangeKeyName, Long.valueOf(rangeKeyValue));
-            dynamoDB.getTable(tableName).putItem(item);
+
+            if(!skipWrite) {
+                t.putItem(item);
+            } else {
+                logger.info(item.toJSONPretty());
+            }
         }
     }
 
@@ -125,5 +134,13 @@ public class DynamoDbWriter implements ItemWriter {
 
     public void setRegion(String region) {
         this.region = region;
+    }
+
+    public boolean isSkipWrite() {
+        return skipWrite;
+    }
+
+    public void setSkipWrite(boolean skipWrite) {
+        this.skipWrite = skipWrite;
     }
 }

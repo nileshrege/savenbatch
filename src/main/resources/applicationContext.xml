@@ -37,10 +37,11 @@
 
     <bean id="jobNotificationListener" class="com.saven.dailyalert.batch.JobNotificationListener">
         <property name="ftpFileTransfer" ref="ftpFileTransfer"/>
-        <property name="skipUpload" value="false"/>
+        <property name="skipUpload" value="${cloud.aws.s3.file.upload.skip}"/>
     </bean>
 
     <bean id="dynamoDbWriter" class="com.saven.dailyalert.batch.DynamoDbWriter">
+        <property name="skipWrite" value="${dynamodb.write.skip}"/>
         <property name="region" value="${cloud.aws.region}"/>
         <property name="accessKey" value="${cloud.aws.credentials.accessKey}"/>
         <property name="secretKey" value="${cloud.aws.credentials.secretKey}"/>
@@ -90,7 +91,7 @@
     </bean>
 
     <bean id="fieldSetMapper" class="com.saven.dailyalert.batch.FieldsSetMapper">
-        <property name="printRow" value="false"/>
+        <property name="printRow" value="${batch.print.row}"/>
         <property name="rowIdColumn" value="${row.id.column}"/>
         <property name="applicableFormulaMap" ref="applicableFormulaMap"/>
     </bean>
