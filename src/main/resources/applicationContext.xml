@@ -37,7 +37,7 @@
 
     <bean id="jobNotificationListener" class="com.saven.dailyalert.batch.JobNotificationListener">
         <property name="ftpFileTransfer" ref="ftpFileTransfer"/>
-        <property name="skipUpload" value="true"/>
+        <property name="skipUpload" value="false"/>
     </bean>
 
     <bean id="dynamoDbWriter" class="com.saven.dailyalert.batch.DynamoDbWriter">
