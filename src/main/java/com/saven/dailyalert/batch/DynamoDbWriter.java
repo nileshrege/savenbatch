@@ -14,6 +14,7 @@ import com.saven.dailyalert.domain.Row;
 
 import org.springframework.batch.item.ItemWriter;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -49,11 +50,13 @@ public class DynamoDbWriter implements ItemWriter {
             Row row = (Row) obj;
             logger.info(row.toString());
             Map<String, Object> map = row.getColumns().stream().collect(Collectors.toMap(Column::getName, Column::getValue));
-            map.remove(rangeKeyName);
-            String hashKeyValue = hashKeyPrefix + row.getColumn(row.getRowIdColumn()).get().getValue() + hashKeySuffix;
+//            map.remove(rangeKeyName);
             String rangeKeyValue = row.getColumn(rangeKeyName).get().getValue();
-            logger.info("Item Primary Key : " + hashKeyValue + " Sort Key: " + rangeKeyValue);
-            Item item = new Item().fromMap(map).withPrimaryKey(hashKeyName, Long.valueOf(hashKeyValue), rangeKeyName, Long.valueOf(rangeKeyValue));
+            String hashKeyValue = hashKeyPrefix + row.getColumn(row.getRowIdColumn()).get().getValue()+rangeKeyValue + hashKeySuffix;
+            BigDecimal key = new BigDecimal(hashKeyValue);
+            logger.info("Item Primary Key : " + key + " Sort Key: " + rangeKeyValue);
+
+            Item item = new Item().fromMap(map).withPrimaryKey(hashKeyName, key);
 
             if(!skipWrite) {
                 t.putItem(item);
